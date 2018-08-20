@@ -4,6 +4,8 @@ import logging
 import socket
 import struct
 from threading import Event, Thread
+import time
+
 from util import *
 
 
@@ -25,6 +27,7 @@ def accept(port):
             conn, addr = s.accept()
         except socket.timeout:
             logger.info("accept on port %s timeout, retrying...", port)
+            #time.sleep(1)
             continue
         else:
             logger.info("Accepted: port %s connected!", port)
@@ -42,6 +45,7 @@ def connect(local_addr, addr):
             s.connect(addr)
         except socket.error:
             logger.info("connect to %s - socket error, retrying...", addr)
+            time.sleep(1)
             continue
         # except Exception as exc:
         #     logger.exception("unexpected exception encountered")
