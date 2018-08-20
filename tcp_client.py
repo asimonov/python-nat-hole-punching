@@ -52,7 +52,7 @@ def connect(local_addr, addr):
         #     break
         else:
             logger.info("connected from %s to %s - success!", local_addr, addr)
-            # STOP.set()
+            STOP.set()
 
 
 def main(known_server_host='54.187.46.146', known_server_port=5005):
@@ -102,6 +102,10 @@ def main(known_server_host='54.187.46.146', known_server_port=5005):
                 continue
             if not threads[name].is_alive():
                 threads.pop(name)
+
+    if STOP.is_set():
+        logger.info('connection to peer established! exiting')
+
 
 
 if __name__ == '__main__':
