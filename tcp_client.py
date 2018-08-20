@@ -13,8 +13,8 @@ STOP = Event()
 
 
 def accept(port):
-    logger.info("accept %s", port)
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    logger.info("trying to accept connection on port %s", port)
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # TCP socket
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
     s.bind(('', port))
@@ -26,12 +26,12 @@ def accept(port):
         except socket.timeout:
             continue
         else:
-            logger.info("Accept %s connected!", port)
+            logger.info("Accepted: port %s connected!", port)
             # STOP.set()
 
 
 def connect(local_addr, addr):
-    logger.info("connect from %s to %s", local_addr, addr)
+    logger.info("connecting from %s to %s", local_addr, addr)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
@@ -45,36 +45,43 @@ def connect(local_addr, addr):
         #     logger.exception("unexpected exception encountered")
         #     break
         else:
-            logger.info("connected from %s to %s success!", local_addr, addr)
+            logger.info("connected from %s to %s - success!", local_addr, addr)
             # STOP.set()
 
 
-def main(host='54.187.46.146', port=5005):
-    sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+def main(known_server_host='54.187.46.146', known_server_port=5005):
+    sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # create socket
     sa.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sa.connect((host, port))
-    priv_addr = sa.getsockname()
+    sa.connect((known_server_host, known_server_port)) # connect to cloud-hosted server with known IP+port
+    my_priv_addr = sa.getsockname() # get our own end of connection (ip+port), as we see it behind our NAT
 
-    send_msg(sa, addr_to_msg(priv_addr))
-    data = recv_msg(sa)
-    logger.info("client %s %s - received data: %s", priv_addr[0], priv_addr[1], data)
-    pub_addr = msg_to_addr(data)
-    send_msg(sa, addr_to_msg(pub_addr))
+    # 1. client->server. send client private_ip+port
+    send_msg(sa, addr_to_msg(my_priv_addr))
 
+    # 4. receive our public_ip+port
+    data = recv_msg(sa) # receive our public IP+port seen outside of NAT
+    logger.info("client %s %s - received data: %s", my_priv_addr[0], my_priv_addr[1], data)
+    my_pub_addr = msg_to_addr(data)
+
+    # 5. reply back to server with what we received from them
+    send_msg(sa, addr_to_msg(my_pub_addr))
+
+    # 7. receive peer address for the peer that the public server matched us with
     data = recv_msg(sa)
     pubdata, privdata = data.split(b'|')
-    client_pub_addr = msg_to_addr(pubdata)
-    client_priv_addr = msg_to_addr(privdata)
+    peer_pub_addr = msg_to_addr(pubdata)
+    peer_priv_addr = msg_to_addr(privdata)
     logger.info(
-        "client public is %s and private is %s, peer public is %s private is %s",
-        pub_addr, priv_addr, client_pub_addr, client_priv_addr,
+        "my public is %s and private is %s, peer public is %s private is %s",
+        my_pub_addr, my_priv_addr, peer_pub_addr, peer_priv_addr,
     )
 
+    # try to both connect to the peer and accept connection from peer. whichever works faster. or works at all
     threads = {
-        '0_accept': Thread(target=accept, args=(priv_addr[1],)),
-        '1_accept': Thread(target=accept, args=(client_pub_addr[1],)),
-        '2_connect': Thread(target=connect, args=(priv_addr, client_pub_addr,)),
-        '3_connect': Thread(target=connect, args=(priv_addr, client_priv_addr,)),
+        '0_accept': Thread(target=accept, args=(my_priv_addr[1],)),
+        #'1_accept': Thread(target=accept, args=(peer_pub_addr[1],)),
+        '2_connect': Thread(target=connect, args=(my_priv_addr, peer_pub_addr,)),
+        #'3_connect': Thread(target=connect, args=(my_priv_addr, peer_priv_addr,)),
     }
     for name in sorted(threads.keys()):
         logger.info('start thread %s', name)

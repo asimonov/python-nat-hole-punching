@@ -9,9 +9,11 @@ logger = logging.getLogger()
 def main(host='127.0.0.1', port=9999):
     sock = socket.socket(socket.AF_INET, # Internet
                          socket.SOCK_DGRAM) # UDP
+    logger.info("connecting to %s:%s", host, port)
     sock.sendto(b'0', (host, port))
 
     while True:
+        logger.info("waiting for recvfrom")
         data, addr = sock.recvfrom(1024)
         print('client received: {} {}'.format(addr, data))
         addr = msg_to_addr(data)
