@@ -31,7 +31,7 @@ def accept(port):
             continue
         else:
             logger.info("Accepted: port %s connected!", port)
-            # STOP.set()
+            STOP.set()
 
 
 def connect(local_addr, addr):
@@ -93,12 +93,12 @@ def main(known_server_host='54.187.46.146', known_server_port=5005):
         logger.info('start thread %s', name)
         threads[name].start()
 
-    while threads:
+    while threads and not STOP.is_set():
         keys = list(threads.keys())
         for name in keys:
             try:
                 threads[name].join(1)
-            except TimeoutError:
+            except Exception:
                 continue
             if not threads[name].is_alive():
                 threads.pop(name)
