@@ -21,16 +21,16 @@ def accept(port):
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
     s.bind(('', port))
     s.listen(1)
-    s.settimeout(5)
     while not STOP.is_set():
         try:
+            s.settimeout(5)
             conn, addr = s.accept()
             logger.info("Accepted: port %s connected!", port)
             STOP.set()
         except socket.timeout:
             logger.info("accept on port %s timeout, retrying...", port)
             #time.sleep(1)
-            continue
+            pass
 
 
 def connect(local_addr, addr):
@@ -41,13 +41,13 @@ def connect(local_addr, addr):
     s.bind(local_addr)
     while not STOP.is_set():
         try:
+            s.settimeout(5)
             s.connect(addr)
             logger.info("connected from %s to %s - success!", local_addr, addr)
             STOP.set()
         except socket.error:
             logger.info("connect to %s - socket error, retrying...", addr)
             time.sleep(1)
-            continue
         # except Exception as exc:
         #     logger.exception("unexpected exception encountered")
         #     break
@@ -91,13 +91,13 @@ def main(known_server_host='54.187.46.146', known_server_port=5005):
         logger.info('start thread %s', name)
         threads[name].start()
 
-    while threads and not STOP.is_set():
+    while threads or not STOP.is_set():
         keys = list(threads.keys())
         for name in keys:
             try:
-                threads[name].join(1)
+                threads[name].join(1) # wait for 1 sec for thread to finish
             except Exception:
-                continue
+                pass
             if not threads[name].is_alive():
                 threads.pop(name)
 
