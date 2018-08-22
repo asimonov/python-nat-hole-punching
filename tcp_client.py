@@ -25,13 +25,12 @@ def accept(port):
     while not STOP.is_set():
         try:
             conn, addr = s.accept()
+            logger.info("Accepted: port %s connected!", port)
+            STOP.set()
         except socket.timeout:
             logger.info("accept on port %s timeout, retrying...", port)
             #time.sleep(1)
             continue
-        else:
-            logger.info("Accepted: port %s connected!", port)
-            STOP.set()
 
 
 def connect(local_addr, addr):
@@ -43,6 +42,8 @@ def connect(local_addr, addr):
     while not STOP.is_set():
         try:
             s.connect(addr)
+            logger.info("connected from %s to %s - success!", local_addr, addr)
+            STOP.set()
         except socket.error:
             logger.info("connect to %s - socket error, retrying...", addr)
             time.sleep(1)
@@ -50,9 +51,6 @@ def connect(local_addr, addr):
         # except Exception as exc:
         #     logger.exception("unexpected exception encountered")
         #     break
-        else:
-            logger.info("connected from %s to %s - success!", local_addr, addr)
-            STOP.set()
 
 
 def main(known_server_host='54.187.46.146', known_server_port=5005):
@@ -85,7 +83,7 @@ def main(known_server_host='54.187.46.146', known_server_port=5005):
     # try to both connect to the peer and accept connection from peer. whichever works faster. or works at all
     threads = {
         '0_accept': Thread(target=accept, args=(my_priv_addr[1],)),
-        '1_accept': Thread(target=accept, args=(peer_pub_addr[1],)),
+        '1_accept': Thread(target=accept, args=(my_pub_addr[1],)),
         '2_connect': Thread(target=connect, args=(my_priv_addr, peer_pub_addr,)),
         '3_connect': Thread(target=connect, args=(my_priv_addr, peer_priv_addr,)),
     }
