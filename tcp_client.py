@@ -33,6 +33,23 @@ def accept(port):
             STOP.set()
 
 
+def acceptread(local_addr):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # TCP socket
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+    s.bind(local_addr)
+    while not STOP.is_set():
+        try:
+            s.settimeout(1)
+            logger.info("trying to acceptread data on %s", local_addr)
+            data = recv_msg(s)
+            logger.info("socket works! can read data on %s: %s", local_addr, data)
+        except socket.timeout:
+            logger.info("acceptread on %s timeout, retrying...", local_addr)
+            continue
+        else:
+            STOP.set()
+
 
 def connect(local_addr, addr):
     logger.info("connecting from %s to %s", local_addr, addr)
@@ -45,6 +62,7 @@ def connect(local_addr, addr):
             s.settimeout(5)
             s.connect(addr)
             logger.info("connected from %s to %s - success!", local_addr, addr)
+            send_msg(s, addr_to_msg(local_addr))
             STOP.set()
         except socket.error:
             logger.info("connect to %s - socket error, retrying...", addr)
@@ -83,8 +101,10 @@ def main(known_server_host='54.187.46.146', known_server_port=5005):
 
     # try to both connect to the peer and accept connection from peer. whichever works faster. or works at all
     threads = {
-        '0_accept': Thread(target=accept, args=(my_priv_addr[1],)),
+        #'0_accept': Thread(target=accept, args=(my_priv_addr[1],)),
         #'1_accept': Thread(target=accept, args=(my_pub_addr[1],)),
+        '0_acceptread': Thread(target=acceptread, args=(my_priv_addr,)),
+        #'1_acceptread': Thread(target=accept, args=(my_pub_addr[1],)),
         '2_connect': Thread(target=connect, args=(my_priv_addr, peer_pub_addr,)),
         '3_connect': Thread(target=connect, args=(my_priv_addr, peer_priv_addr,)),
     }
