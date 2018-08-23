@@ -101,9 +101,9 @@ def main(known_server_host='54.187.46.146', known_server_port=5005):
 
     # try to both connect to the peer and accept connection from peer. whichever works faster. or works at all
     threads = {
-        #'0_accept': Thread(target=accept, args=(my_priv_addr[1],)),
-        #'1_accept': Thread(target=accept, args=(my_pub_addr[1],)),
-        '0_acceptread': Thread(target=acceptread, args=(my_priv_addr,)),
+        '0_accept': Thread(target=accept, args=(my_priv_addr[1],)),
+        '1_accept': Thread(target=accept, args=(my_pub_addr[1],)),
+        #'0_acceptread': Thread(target=acceptread, args=(my_priv_addr,)),
         #'1_acceptread': Thread(target=accept, args=(my_pub_addr[1],)),
         '2_connect': Thread(target=connect, args=(my_priv_addr, peer_pub_addr,)),
         '3_connect': Thread(target=connect, args=(my_priv_addr, peer_priv_addr,)),
