@@ -24,11 +24,11 @@ def main(host='127.0.0.1', port=9999):
     while True:
         s = str(msg)
         bs = bytes(s)
-        logger.info('sending to %s data: %s'.format(peer_addr, bs))
+        logger.info('sending to %s data: %s', peer_addr, bs)
         sock.sendto(bs, peer_addr)
         msg += 1
         data, addr = sock.recvfrom(1024)
-        logger.info('received from addr %s data: %s'.format(addr, data))
+        logger.info('received from addr %s data: %s', addr, data)
         time.sleep(random.randrange(0,1500) / 1000)
 
 if __name__ == '__main__':
