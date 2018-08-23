@@ -32,7 +32,9 @@ def main(host='127.0.0.1', port=9999, role='S'):
             data, addr = sock.recvfrom(1024)
             logger.info('received from addr %s data: %s', addr, data)
 
-        time.sleep(random.randrange(0,1500) / 1000)
+        t = random.randrange(0,1500) / 1000.
+        logger.info('sleep for %s sec', t)
+        time.sleep(t)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
