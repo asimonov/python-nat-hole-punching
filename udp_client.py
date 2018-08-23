@@ -36,4 +36,4 @@ def main(host='127.0.0.1', port=9999, role='S'):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    main(sys.argv[1], int(sys.argv[2]), sys.argv[3])
