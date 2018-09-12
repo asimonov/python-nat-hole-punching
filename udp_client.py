@@ -13,6 +13,15 @@ def main(host='127.0.0.1', port=9999, role='S'):
                          socket.SOCK_DGRAM) # UDP
     logger.info("connecting to p2p broker %s:%s", host, port)
     sock.sendto(b'0', (host, port))
+    priv_addr = sock.getsockname()
+    sock.close()
+
+    logger.info("my socket end is {}".format(priv_addr))
+    sock = socket.socket(socket.AF_INET, # Internet
+                         socket.SOCK_DGRAM) # UDP
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+    sock.bind(('0.0.0.0', priv_addr[1]))
 
     logger.info("waiting for peer address")
     data, addr = sock.recvfrom(1024)
